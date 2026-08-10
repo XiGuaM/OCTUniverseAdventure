@@ -1,0 +1,14 @@
+# PocketMine runtime data (not part of the distributable plugin)
+/config.yml
+/earth.bin.gz
+/pending-transitions.yml
+/planets.yml
+/planet_worlds/
+/universe-*.json
+
+# Local/editor artifacts
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

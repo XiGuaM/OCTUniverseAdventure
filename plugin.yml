@@ -1,0 +1,26 @@
+name: OctUniverseAdventure
+main: UniverseAdventure\Main
+version: 1.0.12
+api:
+  - 2.0.0
+load: STARTUP
+author: nocticode
+description: 类无人深空的随机星球太空玩法，ChatGPT codex辅助完成，对此介意的朋友慎重使用。
+
+commands:
+  universe:
+    description: 宇宙系统管理命令
+    usage: /universe help
+    aliases: [uv]
+    permission: universe.command
+  命名星球:
+    description: 为当前星球命名
+    usage: /命名星球 名字
+    aliases: [planetname]
+    permission: universe.command
+
+permissions:
+  universe.command:
+    default: true
+  universe.admin:
+    default: op

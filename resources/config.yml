@@ -1,0 +1,149 @@
+worlds:
+  universe: universe
+
+earth:
+  asset: earth.bin.gz
+  # 兼容字段；宇宙中的 Earth 实际位置由 coordinate-isolation 管理。
+  center: [0, 64, 0]
+  entry: [0, 64, 40]
+  return-world: earth
+  return-position: spawn
+  trigger-distance: 36
+  exclusion-radius: 96
+  # Earth 使用薄壳结构，降低 MCPE 0.14 的高密度区块渲染负担。
+  shell-thickness: 1
+  stagger-chunk-send: true
+  chunk-send-interval-ticks: 2
+
+coordinate-isolation:
+  # 故意避开 chunk seam 与 McRegion 边界。
+  universe-earth-center: [-7992, 64, -7992]
+  universe-entry-offset: [0, 0, 40]
+  # Earth 普通世界的返回锚点；插件会向上寻找安全地表。
+  earth-world-spawn-xz: [8200, 8200]
+
+space:
+  time: 18000
+  # 1.0.10：宇宙内使用 MCPE 原版飞行物理，手感由客户端原生处理。
+  # 离开宇宙时在真实 Nether 中转台通过安全模式脉冲 + 落地确认清除飞行态。
+  survival-native-flight: true
+  antifly-counter-bypass: false
+  flight-assist-enabled: false
+  # 以下 flight-assist 参数仅保留向后兼容；1.0.10 默认关闭服务端 Motion 太空行走。
+  flight-assist-max-speed: 0.54
+  flight-assist-vertical-speed: 0.54
+  flight-assist-acceleration: 0.065
+  flight-assist-deceleration: 0.025
+  flight-assist-vertical-acceleration: 0.085
+  flight-assist-sneak-acceleration: 0.24
+  flight-assist-input-timeout: 0.26
+  flight-assist-input-threshold: 0.012
+  flight-assist-max-source-step: 0.80
+  flight-assist-send-interval-ticks: 1
+  flight-assist-view-pitch-deadzone: 6.0
+  flight-assist-turn-acceleration: 0.14
+  flight-assist-vertical-idle-brake: 0.07
+  sphere-cell-size: 64
+  sphere-min-radius: 4
+  sphere-max-radius: 12
+  sphere-min-y: 20
+  sphere-max-y: 108
+  biome-id: 1
+  biome-color: [24, 24, 40]
+  safe-blocks:
+    - {name: stone, id: 1, meta: 0}
+    - {name: grass, id: 2, meta: 0}
+    - {name: dirt, id: 3, meta: 0}
+    - {name: coarsedirt, id: 3, meta: 1}
+    - {name: podzol, id: 3, meta: 2}
+    - {name: cobblestone, id: 4, meta: 0}
+    - {name: oakplanks, id: 5, meta: 0}
+    - {name: sandstone, id: 24, meta: 0}
+    - {name: whitewool, id: 35, meta: 0}
+    - {name: orangewool, id: 35, meta: 1}
+    - {name: magentawool, id: 35, meta: 2}
+    - {name: lightbluewool, id: 35, meta: 3}
+    - {name: yellowwool, id: 35, meta: 4}
+    - {name: limewool, id: 35, meta: 5}
+    - {name: pinkwool, id: 35, meta: 6}
+    - {name: graywool, id: 35, meta: 7}
+    - {name: lightgraywool, id: 35, meta: 8}
+    - {name: cyanwool, id: 35, meta: 9}
+    - {name: purplewool, id: 35, meta: 10}
+    - {name: bluewool, id: 35, meta: 11}
+    - {name: brownwool, id: 35, meta: 12}
+    - {name: greenwool, id: 35, meta: 13}
+    - {name: redwool, id: 35, meta: 14}
+    - {name: blackwool, id: 35, meta: 15}
+    - {name: bricks, id: 45, meta: 0}
+    - {name: mossstone, id: 48, meta: 0}
+    - {name: netherrack, id: 87, meta: 0}
+    - {name: stonebricks, id: 98, meta: 0}
+    - {name: endstone, id: 121, meta: 0}
+    - {name: snow, id: 80, meta: 0}
+    - {name: mycelium, id: 110, meta: 0}
+    - {name: hardenedclay, id: 172, meta: 0}
+
+aircraft:
+  item-id: 383
+  item-meta: 120
+  name: "§b星际飞行器刷怪蛋"
+  ascent-speed: 0.38
+  launch-hold-seconds: 10
+  forward-input-threshold: 0.5
+  input-timeout-seconds: 0.75
+  forward-acceleration-per-tick: 0.006
+  release-deceleration-per-tick: 0.012
+  max-ascent-speed: 0.55
+  particle-interval-ticks: 5
+  transition-height: 132
+
+dimension-transfer:
+  nether-world: nether
+  # Earth 和星球默认都走真实 Nether 中转。虚拟 Nether 只保留实验开关，
+  # 高频进出时它可能让 MCPE 0.14 留在合成空区块，因此正式默认关闭。
+  virtual-earth-relay: false
+  virtual-hold-ticks: 60
+  virtual-fake-radius: 1
+  virtual-return-radius: 3
+  client-reset-after-flight-revoke: true
+  # 真实 Nether 中转台脚部基准固定在 [520,112,520]。先让客户端稳定进入真实 Nether，
+  # 再执行安全模式脉冲并把脚明确落在黑曜石台上，连续确认后才允许二跳。
+  nether-position: [520, 112, 520]
+  nether-hold-ticks: 100
+  earth-hold-ticks: 120
+  target-preload-radius: 1
+  native-flight-reset: true
+  reset-spawn-height: 6
+  reset-pulse-delay-ticks: 4
+  # 服务器已经“发出” Nether 区块不等于 0.14 客户端已经把新维度建好。
+  # 先静置并重发真实 3x3 中转区块，再进行游戏模式/飞行态复位。
+  nether-client-settle-ticks: 40
+  nether-resync-interval-ticks: 20
+  ground-confirm-ticks: 6
+  ground-timeout-ticks: 160
+
+render-cache-fix:
+  enabled: false
+  radius: 2
+
+planet-worlds:
+  prefix: planet
+  max-loaded: 4
+  unload-delay-seconds: 60
+  archive-folder: planet_worlds
+  surface-depth: 3
+  # 羊毛星球只转换可见表面附近，避免高密度羊毛 chunk 的旧客户端渲染裂缝。
+  wool-shell-depth: 3
+  return-clearance: 20
+  climate:
+    normal-percent: 50
+    near-earth-normal-boost: 20
+    near-earth-range: 1024
+
+rules:
+  space-night-vision: true
+  planet-night-vision: false
+  hide-planets-from-lw: true
+  block-direct-planet-warp: true
+  suppress-core-lightning-crash: true
