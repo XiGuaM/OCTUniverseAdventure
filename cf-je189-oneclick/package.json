@@ -1,0 +1,13 @@
+{
+  "name": "cf-je189-oneclick-template",
+  "private": true,
+  "version": "0.4.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.102.0"
+  }
+}
