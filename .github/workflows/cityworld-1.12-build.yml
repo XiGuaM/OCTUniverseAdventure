@@ -1,0 +1,93 @@
+name: Build CityWorld 3.020 for Paper 1.12
+
+on:
+  push:
+    branches:
+      - ci/cityworld-1.12-build
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out the original 1.12 CityWorld source
+        uses: actions/checkout@v4
+        with:
+          repository: echurchill/CityWorld
+          ref: bf3a58b97c4fea1992c480393998547d9a410b14
+          path: cityworld
+          persist-credentials: false
+
+      - name: Set up JDK 8 and Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Configure a reproducible legacy Maven build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path("cityworld")
+          plugin=(src/"plugin.yml").read_text(encoding="utf-8")
+          assert "version: 3.020" in plugin, "Unexpected CityWorld version"
+          loot=src/"src/me/daddychurchill/CityWorld/Plugins/LootProvider.java"
+          txt=loot.read_text(encoding="utf-8")
+          original="provider = LootProvider_Phat.loadPhatLoots(generator);"
+          assert original in txt, "Legacy loot API has changed"
+          txt=txt.replace("import me.daddychurchill.CityWorld.Plugins.PhatLoot.LootProvider_Phat;\n","")
+          txt=txt.replace(original,"provider = null; // Default to CityWorld's built-in loot handler")
+          loot.write_text(txt,encoding="utf-8")
+          optional=src/"src/me/daddychurchill/CityWorld/Plugins/PhatLoot/LootProvider_Phat.java"
+          optional.unlink()
+          (src/"pom.xml").write_text('''<?xml version="1.0" encoding="UTF-8"?>
+          <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+            <modelVersion>4.0.0</modelVersion>
+            <groupId>me.daddychurchill</groupId><artifactId>CityWorld</artifactId><version>3.020</version>
+            <properties><maven.compiler.source>1.8</maven.compiler.source>
+            <maven.compiler.target>1.8</maven.compiler.target>
+            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding></properties>
+            <repositories>
+              <repository><id>spigot</id><url>https://hub.spigotmc.org/nexus/content/groups/public/</url></repository>
+              <repository><id>minebench</id><url>https://repo.minebench.de/</url></repository>
+              <repository><id>enginehub</id><url>https://maven.enginehub.org/repo/</url></repository>
+            </repositories>
+            <dependencies>
+              <dependency><groupId>org.spigotmc</groupId><artifactId>spigot-api</artifactId><version>1.12-R0.1-SNAPSHOT</version><scope>provided</scope></dependency>
+              <dependency><groupId>com.sk89q.worldedit</groupId><artifactId>worldedit-core</artifactId><version>6.1</version><scope>provided</scope></dependency>
+              <dependency><groupId>com.sk89q.worldedit</groupId><artifactId>worldedit-bukkit</artifactId><version>6.1.5</version><scope>provided</scope></dependency>
+            </dependencies>
+            <build>
+              <sourceDirectory>src</sourceDirectory>
+              <finalName>CityWorld-3.020-Paper1.12</finalName>
+              <resources><resource><directory>.</directory><includes><include>plugin.yml</include></includes></resource></resources>
+              <plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.8.1</version></plugin></plugins>
+            </build>
+          </project>
+          ''',encoding="utf-8")
+          PY
+
+      - name: Build Java 8 JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn --batch-mode --no-transfer-progress -f cityworld/pom.xml clean package 2>&1 | tee cityworld/build.log
+          jar tf cityworld/target/CityWorld-3.020-Paper1.12.jar | grep -qx 'plugin.yml'
+          javap -verbose -classpath cityworld/target/CityWorld-3.020-Paper1.12.jar me.daddychurchill.CityWorld.CityWorld | grep 'major version: 52'
+
+      - name: Upload JAR and build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CityWorld-3.020-Paper1.12
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            cityworld/target/CityWorld-3.020-Paper1.12.jar
+            cityworld/build.log
